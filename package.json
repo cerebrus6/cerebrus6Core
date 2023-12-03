@@ -1,0 +1,18 @@
+{
+  "name": "cerebrus6core",
+  "version": "1.0.4",
+  "description": "node js core by cerebrus6",
+  "main": "core.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    "./": "./core.js",
+    "./db": "./db.js"
+  },
+  "author": "cerebrus6",
+  "license": "ISC",
+  "devDependencies": {
+    "mysql": "^2.18.1"
+  }
+}
