@@ -1,13 +1,16 @@
-import mysql from 'mysql';
+// import mysql from 'mysql';
+const mysql = require('mysql');
+var db_connection = null;
 
 function process_where(str = "") {
   str = str.trim();
   const last_char = str.charAt(str.length - 1);
 
   // Regular expression to check if the last character is a letter
-  const endsWithLetter = /[a-zA-Z]/.test(last_char);
 
-  if (endsWithLetter) {
+  let conditions = (/[a-zA-Z]/.test(str)) && (!str.endsWith('IN'))
+
+  if (conditions) {
     return str + ' =';
   } else {
     return str;
@@ -52,16 +55,28 @@ class db {
     // console.log(this.connection);
     // console.log(this.connection.state);
     if (!this.connection || this.connection.state === 'disconnected') {
-      const db_connection = await this.connection.connect();
+      db_connection = await this.connection.connect();
     } else {
-      const db_connection = this.connection;
+      db_connection = this.connection;
     }
 
     // Construct the SELECT query
     let sql = `SELECT ${(fields && fields !== '*') || '*'} FROM ${table}`;
 
     if(where) {
-      sql += ' WHERE ' + Object.entries(where).map(([key, value]) => `${process_where(key)} '${value}'`).join(' AND ');
+      sql += ' WHERE ' + Object.entries(where).map(([key, value]) => {
+        if(!Array.isArray(value)) {
+          value = [value];
+        }
+
+        let condition = "("
+        condition += value.map((val) => {
+          return ` ${process_where(key)} '${val}' `
+        }).join('OR')
+        condition += ")";
+
+        return condition;
+      }).join(' AND ');
     }
 
     if (order) {
@@ -95,28 +110,46 @@ class db {
     if(!table || !where || !values)
       return false;
 
-    if (!this.connection || this.connection.state === 'disconnected') {
-      const db_connection = await this.connection.connect();
-    } else {
-      const db_connection = this.connection;
+    // if (!this.connection || this.connection.state === 'disconnected') {
+    //   db_connection = await this.connection.connect();
+    // } else {
+    //   db_connection = this.connection;
+    // }
+
+    let sql = `UPDATE ${table}`;
+
+    if(values) {
+      sql += ' SET ' + Object.entries(values).map(([key, value]) => `${process_where(key)} '${value}'`).join(' , ');
     }
 
-    where = process_where(where);
+    if(where) {
+      sql += ' WHERE ' + Object.entries(where).map(([key, value]) => {
+        if(!Array.isArray(value)) {
+          value = [value];
+        }
 
-    let sql = `UPDATE ${table} SET ? WHERE ?`;
-    const result = db_connection.query(sql, [values, where]);
+        let condition = "("
+        condition += value.map((val) => {
+          return ` ${process_where(key)} '${val}' `
+        }).join('OR')
+        condition += ")";
+
+        return condition;
+      }).join(' AND ');
+    }
+
+    console.log(sql);
+    let res = await this.query(sql);
     res = await this.select(table, '*', where);
-    return result.affectedRows > 0;
-
+    return res;
   }
 
   async insert(table, values) {
-    const db_connection = await this.connection.connect();
     let sql = `INSERT INTO ${table} SET ?`;
 
     let res = await this.query(sql, values);
     let id = res.insertId;
-    res = await this.select(table, '*', {'id': id}, 1);
+    res = await this.select(table, '*', {'id': id});
     return res;
   }
 
@@ -143,17 +176,23 @@ class db {
   }
 }
 
-// module.exports = db;
-export default db;
+module.exports = db;
+// export default db;
 
 // Testing
-// let database_connection = new db();
-// let val = {
-//   'name': 'hey',
-//   'value': 'hoy',
-//   'added_by': '1',
-//   'added_on': '2023-10-28 00:19:08'
-// }
+let database_connection = new db();
+let val = {
+  'name': 'dio',
+  'value': 'yap',
+  'added_by': '1',
+  'added_on': '2023-10-28 00:19:08'
+}
 
-// // database_connection.insert('main', val);
+let where = {
+  'id': [9, 1],
+}
+
+database_connection.update('main', where, val);
 // database_connection.select('main', '*');
+
+// console.log(process_where('id IN'));
