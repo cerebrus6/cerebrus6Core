@@ -188,12 +188,12 @@ class db {
 
 // module.exports = db;
 export default db;
-let database_connection = new db();
-let val = {
-  'name': 'hey',
-  'value': 'hoy',
-  'added_by': '1',
-  'added_on': '2023-10-28 00:19:08'
-}
+// let database_connection = new db();
+// let val = {
+//   'name': 'hey',
+//   'value': 'hoy',
+//   'added_by': '1',
+//   'added_on': '2023-10-28 00:19:08'
+// }
 
-database_connection.insert('main', val);
+// database_connection.insert('main', val);
