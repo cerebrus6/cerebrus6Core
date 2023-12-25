@@ -1,23 +1,42 @@
-import pg from 'pg';
-const { Pool } = pg;
+// import pg from 'pg';
+// const { Pool } = pg;
+import dotenv from 'dotenv';
+dotenv.config({ path: dotenv.config({ path: './.env' }).error ? '../.env' : './.env' });
 
-var sql, binds, res;
+const { Pool } = require('pg');
+
+var sql, binds, res, db_connection;
+
+function process_where(str = "") {
+  str = str.trim();
+  const last_char = str.charAt(str.length - 1);
+
+  // Regular expression to check if the last character is a letter
+
+  let conditions = (/[a-zA-Z]/.test(str)) && (!str.endsWith('IN'))
+
+  if (conditions) {
+    return str + ' =';
+  } else {
+    return str;
+  }
+}
 
 class db {
   constructor() {
     this.connection = new Pool({
-      host: "db.kwnjplywneufccyzxocs.supabase.co",
-      user: "postgres",
-      password: "&AU$mpm_NVrt*h7",
-      database: "postgres",
-      port: 5432,
+      host: process.env.HOST,
+      user: process.env.USER,
+      password: process.env.PASSWORD,
+      database: process.env.DATABASE,
+      port: process.env.PORT,
     });
   }
 
   async select(table = null, fields = null, where = [], order = null, limit = null) {
     // Connect to database
 
-      const db_connection = await this.connection.connect();
+      db_connection = await this.connection.connect();
     // Execute query
 
     if(fields === '') {
@@ -62,7 +81,7 @@ class db {
     const backupFile = `backup_${timestamp}.dump`;
 
     // Connect to the database
-    const db_connection = await this.connection.connect();
+    db_connection = await this.connection.connect();
 
     // Backup the database
     try {
@@ -77,48 +96,50 @@ class db {
     }
   }
 
-  async update(table, where, values) {
-    // Connect to database
-
-      const db_connection = await this.connection.connect();
-    // Execute query
-
-    if(where.length === 0) {
-      where = '';
-    } else {
-      where = 'WHERE ' + Object.entries(where)
-                        .map(([key, value]) => `${key} '${String(value).replace("'",'\'').replace('"','\"')}'`)
-                        .join(' AND ');
-    }
-
-    if(values.length === 0) {
+  async update(table = null, where = null, values = null) {
+    if(!table || !where || !values)
       return false;
-    } else {
-      values = 'SET ' + Object.entries(values)
-                        .map(([key, value]) => `${key} = '${String(value).replace("'",'\'').replace('"','\"')}'`)
+
+    let where_conditon = "";
+
+    if(values) {
+      values = '' + Object.entries(values)
+                        .map(([key, value]) => `${key} = '${String(value).replace("'",'').replace('"','')}'`)
                         .join(', ');
     }
 
-    sql = `UPDATE ${table}
-        ${values} 
-        ${where}`;
+    if(where) {
+      where = Object.entries(where).map(([key, value]) => {
+        if(!Array.isArray(value)) {
+          value = [value];
+        }
 
+        let condition = "("
+        condition += value.map((val) => {
+          return ` ${process_where(key)} '${String(val).replace("'",'\'').replace('"','\"')}' `
+        }).join('OR')
+        condition += ")";
+
+        return condition;
+      }).join(' AND ');
+    }
+
+    sql = `UPDATE ${table}\n SET ${values}\n WHERE ${where}\n RETURNING *;`;
+
+    console.log(sql);
+
+    db_connection = await this.connection.connect();
     res = await db_connection.query(sql);
     db_connection.release();
-    if (res.rowCount > 0) {
-      // At least one row was updated, so return true
-      return true;
-    } else {
-      // No rows were updated, so return false
-      return false;
-    }
+
+    return (res.rowCount > 0) ? res.rows : false;
   }
 
   async insert(table, values) {
     if(!values || !table)
       return false;
 
-    const db_connection = await this.connection.connect();
+    db_connection = await this.connection.connect();
 
     let fields = "";
     fields = '(' + Object.entries(values)
@@ -140,8 +161,8 @@ class db {
     db_connection.release();
 
     if (res.rows.length > 0) {
-      console.log(res.rows[0]);
-      return res.rows[0];
+      console.log(res.rows);
+      return res.rows;
     } else {
       return false;
     }
@@ -171,7 +192,7 @@ class db {
       binds.push(offset);
     }
 
-    const db_connection = await this.connection.connect();
+    db_connection = await this.connection.connect();
 
     try {
       const result = await db_connection.query(sql, binds);
@@ -186,14 +207,21 @@ class db {
   }
 }
 
-// module.exports = db;
-export default db;
-// let database_connection = new db();
-// let val = {
-//   'name': 'hey',
-//   'value': 'hoy',
-//   'added_by': '1',
-//   'added_on': '2023-10-28 00:19:08'
-// }
+module.exports = db;
+// export default db;
+
+let database_connection = new db();
+let val = {
+  'name': 'dio',
+  'value': 'yap',
+  'added_by': '1',
+  'added_on': '2023-10-28 00:19:08'
+}
+
+let where = {
+  'id': [2, 1],
+}
+
+database_connection.update('main', where, val);
 
 // database_connection.insert('main', val);
