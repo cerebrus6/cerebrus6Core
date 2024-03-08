@@ -1,9 +1,7 @@
-// import pg from 'pg';
-// const { Pool } = pg;
 import dotenv from 'dotenv';
+import pg from 'pg';
+const Pool = pg.Pool;
 dotenv.config({ path: dotenv.config({ path: './.env' }).error ? '../.env' : './.env' });
-
-const { Pool } = require('pg');
 
 var sql, binds, res, db_connection;
 
@@ -207,21 +205,23 @@ class db {
   }
 }
 
-module.exports = db;
-// export default db;
+// module.exports = db;
+export default db;
 
-let database_connection = new db();
-let val = {
-  'name': 'dio',
-  'value': 'yap',
-  'added_by': '1',
-  'added_on': '2023-10-28 00:19:08'
-}
 
-let where = {
-  'id': [2, 1],
-}
+// Testing
+// let database_connection = new db();
+// let val = {
+//   'name': 'test name',
+//   'value': 'test value',
+//   'added_by': '1',
+//   'added_on': '2023-10-28 00:19:08'
+// }
 
-database_connection.update('main', where, val);
+// let where = {
+//   'id': [2, 1],
+// }
+
+// database_connection.update('main', where, val);
 
 // database_connection.insert('main', val);

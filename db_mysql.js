@@ -1,5 +1,4 @@
-// import mysql from 'mysql';
-const mysql = require('mysql');
+import mysql from 'mysql';
 var db_connection = null;
 
 function process_where(str = "") {
@@ -36,10 +35,10 @@ function process_select_results(rows = []) {
 class db {
   constructor() {
     this.connection = mysql.createConnection({
-      host: 'localhost',
-      user: 'root',
-      password: '',
-      database: 'discordbot'
+      host: process.env.HOST,
+      user: process.env.USER,
+      password: process.env.PASSWORD,
+      database: process.env.DATABASE
     });
 
     // this.connection.connect((err) => {
@@ -176,23 +175,23 @@ class db {
   }
 }
 
-module.exports = db;
-// export default db;
+// module.exports = db;
+export default db;
 
 // Testing
-let database_connection = new db();
-let val = {
-  'name': 'dio',
-  'value': 'yap',
-  'added_by': '1',
-  'added_on': '2023-10-28 00:19:08'
-}
+// let database_connection = new db();
+// let val = {
+//   'name': 'asd',
+//   'value': 'asd',
+//   'added_by': '1',
+//   'added_on': '2023-10-28 00:19:08'
+// }
 
-let where = {
-  'id': [9, 1],
-}
+// let where = {
+//   'id': [9, 1],
+// }
 
-database_connection.update('main', where, val);
+// database_connection.update('main', where, val);
 // database_connection.select('main', '*');
 
 // console.log(process_where('id IN'));
